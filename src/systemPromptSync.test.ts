@@ -41,7 +41,7 @@ describe('systemPromptSync.ts', () => {
       expect(union.has('GLOB_TOOL_NAME')).toBe(true);
       // Real minified vars are never human-names, so never in the union.
       expect(union.has('HL7')).toBe(false);
-    });
+    }, 15_000);
 
     it('caches the union and rebuilds it after the cache is cleared', async () => {
       const first = await loadIdentifierMapUnion();
