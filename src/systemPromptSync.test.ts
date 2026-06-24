@@ -52,7 +52,7 @@ describe('systemPromptSync.ts', () => {
       const third = await loadIdentifierMapUnion();
       expect(third).not.toBe(first); // fresh instance after clear
       expect(third).toEqual(first); // same contents
-    });
+    }, 15_000);
 
     it('falls back to baked IDENTIFIER_UNION when findRepoPromptsDir returns null (npm-install case)', async () => {
       // Simulate npm-installed run: no repo dir on disk

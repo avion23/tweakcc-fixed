@@ -155,9 +155,7 @@ const patchChannelsNotice = (file: string): string | null => {
   const match = file.match(pattern);
 
   if (!match || match.index === undefined) {
-    console.error(
-      'patch: channelsMode: failed to find ChannelsNotice warning text'
-    );
+    // Removed by Anthropic in 2.1.185 — the desired outcome (no warning) is the default.
     return null;
   }
 
