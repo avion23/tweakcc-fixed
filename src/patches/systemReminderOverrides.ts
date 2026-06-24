@@ -812,18 +812,19 @@ const SELECTED_LINES_INJECTION: ReminderInjection = {
   defaultBody:
     'The user selected the lines {{line_start}} to {{line_end}} from {{filename}}:\n{{selected_text}}\n\nThis may or may not be related to the current task.',
   apply(content, body, isSuppressed) {
+    // 2.1.187+: truncation moved to helper fn; pattern is now a one-liner arrow
     return findAndReplace(
       content,
-      /selected_lines_in_ide:\(([$\w]+)\)=>\{let ([$\w]+)=\1\.content\.length>2000\?\1\.content\.substring\(0,2000\)\+`\n\.\.\. \(truncated\)`:\1\.content;return ([$\w]+)\(\[([$\w]+)\(\{content:`The user selected the lines \$\{\1\.lineStart\} to \$\{\1\.lineEnd\} from \$\{\1\.filename\}:\n\$\{\2\}\n\nThis may or may not be related to the current task\.`,isMeta:!0\}\)\]\)\}/,
+      /selected_lines_in_ide:\(([$\w]+)\)=>([$\w]+)\(\[([$\w]+)\(\{content:`The user selected the lines \$\{\1\.lineStart\} to \$\{\1\.lineEnd\} from \$\{\1\.filename\}:\n\$\{([$\w]+)\(\1\.content\)\}\n\nThis may or may not be related to the current task\.`,isMeta:!0\}\)\]\)/,
       m => {
-        const [, hParam, qVar, o5Name, j6Name] = m;
-        if (isSuppressed) return `selected_lines_in_ide:(${hParam})=>[]`;
+        const [, param, arrayWrap, msgCtor, truncHelper] = m;
+        if (isSuppressed) return `selected_lines_in_ide:(${param})=>[]`;
         const bodyForBuild = body
-          .replace(/\$\{H\.lineStart\}/g, `\${${hParam}.lineStart}`)
-          .replace(/\$\{H\.lineEnd\}/g, `\${${hParam}.lineEnd}`)
-          .replace(/\$\{H\.filename\}/g, `\${${hParam}.filename}`)
-          .replace(/\$\{q\}/g, `\${${qVar}}`);
-        return `selected_lines_in_ide:(${hParam})=>{let ${qVar}=${hParam}.content.length>2000?${hParam}.content.substring(0,2000)+\`\n... (truncated)\`:${hParam}.content;return ${o5Name}([${j6Name}({content:\`${bodyForBuild}\`,isMeta:!0})])}`;
+          .replace(/\$\{H\.lineStart\}/g, `\${${param}.lineStart}`)
+          .replace(/\$\{H\.lineEnd\}/g, `\${${param}.lineEnd}`)
+          .replace(/\$\{H\.filename\}/g, `\${${param}.filename}`)
+          .replace(/\$\{q\}/g, `\${${truncHelper}(${param}.content)}`);
+        return `selected_lines_in_ide:(${param})=>${arrayWrap}([${msgCtor}({content:\`${bodyForBuild}\`,isMeta:!0})])`;
       },
       'selected-lines-in-ide',
       c => /selected_lines_in_ide:\([$\w]+\)=>\[\]/.test(c)
@@ -1059,10 +1060,11 @@ const VERIFY_PLAN_INJECTION: ReminderInjection = {
       'You have completed implementing the plan'
     );
     if (!found) {
-      console.error(
-        'patch: reminder verify-plan-reminder: failed to find case body'
+      // Removed by Anthropic in 2.1.187 — verify_plan_reminder is now in skip-lists only, no case handler.
+      console.warn(
+        'patch: reminder verify-plan-reminder: case body not found (removed upstream) — no-op'
       );
-      return null;
+      return content;
     }
     const { bodyStart, bodyEnd } = found;
     const caseBody = content.slice(bodyStart, bodyEnd);
